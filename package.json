@@ -1,0 +1,24 @@
+{
+  "name": "@naram/ag-switch",
+  "version": "0.2.0",
+  "description": "Isolated OAuth profiles for Antigravity CLI",
+  "license": "MIT",
+  "author": "naram",
+  "keywords": ["antigravity", "agy", "cli", "profile", "oauth"],
+  "repository": { "type": "git", "url": "git+https://github.com/unk/ag-switch.git" },
+  "homepage": "https://github.com/unk/ag-switch#readme",
+  "bugs": { "url": "https://github.com/unk/ag-switch/issues" },
+  "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org/" },
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "bin": { "ag-switch": "src/cli.mjs" },
+  "files": ["src", "README.md", "CHANGELOG.md", "DEVELOPMENT.md", "POC_PLAN.md", "poc/README.md", "poc/RESULTS.md", "poc/evidence/*.json", "validation/*.md", "validation/evidence/*.json"],
+  "scripts": {
+    "test": "node --test test/*.test.mjs poc/*.test.mjs",
+    "test:product": "node --test test/*.test.mjs",
+    "test:shell": "node --test test/shells.test.mjs",
+    "start": "node src/cli.mjs",
+    "poc": "node poc/run.mjs",
+    "prepublishOnly": "npm test"
+  }
+}

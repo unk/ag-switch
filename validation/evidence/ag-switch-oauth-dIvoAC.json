@@ -1,0 +1,295 @@
+{
+  "marker": "ag-switch-product-validation-summary-v1",
+  "runId": "ag-switch-oauth-dIvoAC",
+  "generatedAt": "2026-10-26T23:52:39.911Z",
+  "platform": "darwin",
+  "arch": "arm64",
+  "node": "v24.21.0",
+  "agyVersion": "1.4.7",
+  "binarySha256": "b7a13e53c9f49921692676ef8edc2e60ceb67064c00bc732d9a364ec3ad75b32",
+  "reports": {
+    "probe": {
+      "phase": "probe",
+      "at": "2026-10-26T15:59:34.270Z",
+      "status": "pass",
+      "profiles": {
+        "a": {
+          "checks": {
+            "sshFileStorage": true,
+            "loginRequired": true,
+            "noFallbackStorage": true,
+            "noAuthenticatedResponse": true,
+            "credentialAbsent": true,
+            "cleanExit": true
+          },
+          "code": 1,
+          "timedOut": true
+        },
+        "b": {
+          "checks": {
+            "sshFileStorage": true,
+            "loginRequired": true,
+            "noFallbackStorage": true,
+            "noAuthenticatedResponse": true,
+            "credentialAbsent": true,
+            "cleanExit": true
+          },
+          "code": 1,
+          "timedOut": true
+        }
+      },
+      "comparison": {
+        "files": [],
+        "keychain": false
+      }
+    },
+    "login": {
+      "stage": "login",
+      "startedAt": "2026-10-26T16:28:19.001Z",
+      "endedAt": "2026-10-26T16:28:40.951Z",
+      "status": "pass",
+      "checks": {
+        "expectedRequestsCompleted": true,
+        "responsesMatched": true,
+        "accountsStable": true,
+        "accountsDifferent": true,
+        "credentialsPrivate": true,
+        "noToolEvents": true,
+        "conversationsSeparated": true,
+        "nativeStateUnchanged": true
+      },
+      "comparison": {
+        "files": [],
+        "keychain": false
+      },
+      "tokenExpiresAt": {
+        "a": "2026-10-26T17:27:02.741Z",
+        "b": "2026-10-26T17:27:44.424Z"
+      }
+    },
+    "reconnect": {
+      "stage": "reconnect",
+      "startedAt": "2026-10-26T16:28:59.232Z",
+      "endedAt": "2026-10-26T16:29:37.619Z",
+      "status": "pass",
+      "checks": {
+        "expectedRequestsCompleted": true,
+        "responsesMatched": true,
+        "accountsStable": true,
+        "accountsDifferent": true,
+        "credentialsPrivate": true,
+        "noToolEvents": true,
+        "conversationsSeparated": true,
+        "nativeStateUnchanged": true
+      },
+      "comparison": {
+        "files": [],
+        "keychain": false
+      },
+      "tokenExpiresAt": {
+        "a": "2026-10-26T17:27:02.741Z",
+        "b": "2026-10-26T17:27:44.424Z"
+      }
+    },
+    "concurrent": {
+      "stage": "concurrent",
+      "startedAt": "2026-10-26T16:29:49.493Z",
+      "endedAt": "2026-10-26T16:30:13.080Z",
+      "status": "pass",
+      "checks": {
+        "expectedRequestsCompleted": true,
+        "responsesMatched": true,
+        "accountsStable": true,
+        "accountsDifferent": true,
+        "credentialsPrivate": true,
+        "noToolEvents": true,
+        "conversationsSeparated": true,
+        "nativeStateUnchanged": true,
+        "restartedWithPeer": true,
+        "requestsOverlapped": true
+      },
+      "comparison": {
+        "files": [],
+        "keychain": false
+      },
+      "tokenExpiresAt": {
+        "a": "2026-10-26T17:27:02.741Z",
+        "b": "2026-10-26T17:27:44.424Z"
+      }
+    },
+    "renewal": {
+      "stage": "renewal",
+      "startedAt": "2026-10-26T23:44:55.527Z",
+      "endedAt": "2026-10-26T23:45:19.302Z",
+      "status": "pass",
+      "checks": {
+        "expectedRequestsCompleted": true,
+        "responsesMatched": true,
+        "accountsStable": true,
+        "accountsDifferent": true,
+        "credentialsPrivate": true,
+        "noToolEvents": true,
+        "conversationsSeparated": true,
+        "nativeStateUnchanged": true,
+        "peerUnchanged": true,
+        "bothRenewed": true
+      },
+      "comparison": {
+        "files": [],
+        "keychain": false
+      },
+      "originalComparison": {
+        "files": [],
+        "keychain": true
+      },
+      "baselineReviewAccepted": true,
+      "tokenExpiresAt": {
+        "a": "2026-10-27T00:44:55.305Z",
+        "b": "2026-10-27T00:45:07.884Z"
+      }
+    },
+    "logoutCheck": {
+      "stage": "logout",
+      "phase": "awaiting-relogin",
+      "status": "pass",
+      "checks": {
+        "aCredentialRemoved": true,
+        "aRequiresLogin": true,
+        "bCredentialUnchangedDuringUserLogout": true,
+        "bCredentialUnchangedDuringChecks": true,
+        "bAccountStable": true,
+        "bConversationRestored": true,
+        "defaultAuthenticatedBeforeAndAfter": true,
+        "nativeFilesUnchanged": true
+      },
+      "comparisons": {
+        "userLogout": {
+          "files": [],
+          "keychain": false
+        },
+        "profileChecks": {
+          "files": [],
+          "keychain": false
+        },
+        "defaultControl": {
+          "files": [],
+          "keychain": false
+        },
+        "original": {
+          "files": [],
+          "keychain": true
+        }
+      },
+      "metadataChangesAreObservations": true,
+      "at": "2026-10-26T23:50:06.999Z"
+    },
+    "logout": {
+      "stage": "logout",
+      "status": "pass",
+      "at": "2026-10-26T23:51:21.249Z",
+      "checks": {
+        "aCredentialRemoved": true,
+        "aRequiresLogin": true,
+        "bCredentialUnchangedDuringUserLogout": true,
+        "bCredentialUnchangedDuringChecks": true,
+        "bAccountStable": true,
+        "bConversationRestored": true,
+        "defaultAuthenticatedBeforeAndAfter": true,
+        "nativeFilesUnchanged": true,
+        "aReloggedIntoSameAccount": true,
+        "aNewAccessToken": true,
+        "bAuthUnchangedAcrossRelogin": true,
+        "bCredentialUnchangedDuringValidation": true,
+        "aAndBConversationsRestored": true,
+        "defaultAuthenticatedAfterRelogin": true,
+        "nativeFilesUnchangedAcrossRelogin": true,
+        "bothCredentialFilesPrivate": true
+      },
+      "comparisons": {
+        "userLogout": {
+          "files": [],
+          "keychain": false
+        },
+        "profileChecks": {
+          "files": [],
+          "keychain": false
+        },
+        "defaultControl": {
+          "files": [],
+          "keychain": false
+        },
+        "original": {
+          "files": [],
+          "keychain": true
+        },
+        "acrossRelogin": {
+          "files": [],
+          "keychain": false
+        },
+        "profileChecksAfterRelogin": {
+          "files": [],
+          "keychain": false
+        },
+        "defaultControlAfterRelogin": {
+          "files": [],
+          "keychain": false
+        }
+      },
+      "metadataChangesAreObservations": true
+    }
+  },
+  "renewal": {
+    "status": "pass",
+    "evidence": "renewal-1793058319302.json"
+  },
+  "logout": {
+    "status": "pass",
+    "phase": "complete",
+    "defaultAuthenticatedBeforeLogout": true,
+    "preparedAt": "2026-10-26T23:47:28.746Z",
+    "logoutChecksPassed": true,
+    "loggedOutAt": "2026-10-26T23:50:06.999Z",
+    "completedAt": "2026-10-26T23:51:21.249Z",
+    "evidence": "logout-1793058681249.json"
+  },
+  "cleanup": {
+    "status": "pass",
+    "startedAt": "2026-10-26T23:51:52.258Z",
+    "originalComparisonBefore": {
+      "files": [],
+      "keychain": true
+    },
+    "evidenceArchivedBeforeCleanup": true,
+    "completedAt": "2026-10-26T23:51:52.392Z",
+    "profilesPreserved": false,
+    "profilesRemoved": 2,
+    "launchersRemoved": 2,
+    "rootAbsent": true,
+    "remainingCLIProcesses": 0,
+    "comparisonDuringCleanup": {
+      "files": [],
+      "keychain": false
+    },
+    "originalComparisonAfter": {
+      "files": [],
+      "keychain": true
+    }
+  },
+  "nativeBaselineReview": {
+    "acceptedChanges": {
+      "files": [],
+      "keychain": true
+    },
+    "keychainModifiedAt": "2026-10-26T23:41:42.000Z",
+    "cause": "unknown",
+    "userReportedDefaultUsage": "unsure",
+    "originalPreserved": true
+  },
+  "status": "pass",
+  "scope": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "agyVersion": "1.4.7",
+    "verifiedBinaryOnly": true
+  }
+}

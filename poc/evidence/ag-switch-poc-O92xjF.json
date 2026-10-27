@@ -1,0 +1,210 @@
+{
+  "runId": "ag-switch-poc-O92xjF",
+  "updatedAt": "2026-10-26T15:21:40.345Z",
+  "environment": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "v24.21.0",
+    "cliVersion": "1.4.7",
+    "binarySha256": "b7a13e53c9f49921692676ef8edc2e60ceb67064c00bc732d9a364ec3ad75b32"
+  },
+  "stages": {
+    "P0": {
+      "status": "pass",
+      "at": "2026-10-26T07:38:16.457Z"
+    },
+    "P1": {
+      "status": "pass",
+      "at": "2026-10-26T07:42:05.000Z"
+    },
+    "P2": {
+      "status": "pass",
+      "at": "2026-10-26T13:47:00.957Z"
+    },
+    "P3": {
+      "status": "pass",
+      "at": "2026-10-26T13:48:16.501Z"
+    },
+    "P4": {
+      "status": "pass",
+      "at": "2026-10-26T13:49:51.540Z"
+    },
+    "P5": {
+      "status": "pass",
+      "at": "2026-10-26T14:51:59.655Z"
+    },
+    "P6": {
+      "status": "pass",
+      "at": "2026-10-26T15:20:27.116Z"
+    },
+    "P7": {
+      "status": "pass",
+      "at": "2026-10-26T15:21:40.345Z"
+    }
+  },
+  "validations": [
+    {
+      "stage": "P2",
+      "status": "pass",
+      "startedAt": "2026-10-26T13:46:09.747Z",
+      "endedAt": "2026-10-26T13:46:31.376Z",
+      "checks": {
+        "accountsDifferent": true,
+        "accountsStable": true,
+        "authPermissionsPrivate": true,
+        "originalFilesUnchangedDuringVerification": true,
+        "keychainUnchangedDuringVerification": true,
+        "responsesMatched": true,
+        "noToolEvents": true,
+        "conversationsSeparated": true
+      },
+      "tokenExpiresAt": {
+        "a": "2026-10-26T14:38:04.202Z",
+        "b": "2026-10-26T14:39:15.489Z"
+      }
+    },
+    {
+      "stage": "P3",
+      "status": "pass",
+      "startedAt": "2026-10-26T13:47:06.435Z",
+      "endedAt": "2026-10-26T13:47:39.138Z",
+      "checks": {
+        "accountsDifferent": true,
+        "accountsStable": true,
+        "authPermissionsPrivate": true,
+        "originalFilesUnchangedDuringVerification": true,
+        "keychainUnchangedDuringVerification": true,
+        "responsesMatched": true,
+        "noToolEvents": true,
+        "conversationsSeparated": true
+      },
+      "tokenExpiresAt": {
+        "a": "2026-10-26T14:38:04.202Z",
+        "b": "2026-10-26T14:39:15.489Z"
+      }
+    },
+    {
+      "stage": "P3",
+      "status": "pass",
+      "startedAt": "2026-10-26T14:50:32.028Z",
+      "endedAt": "2026-10-26T14:51:09.759Z",
+      "checks": {
+        "accountsDifferent": true,
+        "accountsStable": true,
+        "authPermissionsPrivate": true,
+        "originalFilesUnchangedDuringVerification": true,
+        "keychainUnchangedDuringVerification": true,
+        "responsesMatched": true,
+        "noToolEvents": true,
+        "conversationsSeparated": true
+      },
+      "tokenExpiresAt": {
+        "a": "2026-10-26T15:49:42.736Z",
+        "b": "2026-10-26T15:49:55.031Z"
+      }
+    },
+    {
+      "stage": "P4",
+      "status": "pass",
+      "startedAt": "2026-10-26T13:48:19.821Z",
+      "endedAt": "2026-10-26T13:49:15.486Z",
+      "checks": {
+        "accountsDifferent": true,
+        "accountsStable": true,
+        "authPermissionsPrivate": true,
+        "originalFilesUnchangedDuringVerification": true,
+        "keychainUnchangedDuringVerification": true,
+        "responsesMatched": true,
+        "noToolEvents": true,
+        "conversationsSeparated": true,
+        "restartWhilePeerRunning": true,
+        "profileSettingsSeparated": true,
+        "concurrentRequestsOverlapped": true
+      },
+      "tokenExpiresAt": {
+        "a": "2026-10-26T14:38:04.202Z",
+        "b": "2026-10-26T14:39:15.489Z"
+      }
+    },
+    {
+      "stage": "P5",
+      "status": "pass",
+      "startedAt": "2026-10-26T14:49:43.061Z",
+      "endedAt": "2026-10-26T14:50:06.933Z",
+      "checks": {
+        "accountsDifferent": true,
+        "accountsStable": true,
+        "authPermissionsPrivate": true,
+        "originalFilesUnchangedDuringVerification": true,
+        "keychainUnchangedDuringVerification": true,
+        "responsesMatched": true,
+        "noToolEvents": true,
+        "conversationsSeparated": true,
+        "peerAuthUnchangedAfterA": true,
+        "bothTokensRenewed": true
+      },
+      "tokenExpiresAt": {
+        "a": "2026-10-26T15:49:42.736Z",
+        "b": "2026-10-26T15:49:55.031Z"
+      }
+    },
+    {
+      "stage": "P6",
+      "status": "pass",
+      "at": "2026-10-26T15:18:44.871Z",
+      "checks": {
+        "aTokenRemoved": true,
+        "aRequiresLogin": true,
+        "bAuthUnchangedImmediately": true,
+        "bAuthStillUnchanged": true,
+        "bResponded": true,
+        "defaultKeychainAuthBeforeAndAfter": true,
+        "nativeStateUnchangedAtLogout": true,
+        "nativeStateUnchangedThroughout": true,
+        "aReloggedIntoSameAccount": true,
+        "bRetainedSameAccount": true,
+        "aReloginIssuedDifferentAccessToken": true,
+        "bCredentialUnchangedAcrossRelogin": true,
+        "aAndBRespondedAfterRelogin": true,
+        "bCredentialFileUnchangedDuringValidation": true,
+        "defaultAuthenticatedAfterRelogin": true,
+        "bothCredentialFilesPrivate": true,
+        "nativeStateUnchangedDuringValidation": true,
+        "nativeStateUnchangedAcrossRelogin": true
+      }
+    }
+  ],
+  "baselineReview": {
+    "acceptedChanges": {
+      "files": [],
+      "keychain": true
+    },
+    "note": "P0 이후 기본 앱·CLI 사용 이력을 사용자가 확인함. 최초 관찰한 키체인 변경은 최초 PoC 로그인 전인 22:14:28. 현재 최종 수정 23:49:11도 P5 시작 23:49:43보다 앞섬. P5 및 정식 P6 로그아웃·재로그인 구간에는 추가 변경 없음. 원본을 보존하고 검토 시점과 정리 전후를 비교함.",
+    "keychainMetadataDates": {
+      "cdat": "20261014081927Z",
+      "mdat": "20261026144911Z"
+    }
+  },
+  "tests": {
+    "passed": 25,
+    "failed": 0
+  },
+  "cleanup": {
+    "status": "pass",
+    "completedAt": "2026-10-26T15:21:40.345Z",
+    "rootRemoved": true,
+    "cleaned": true,
+    "postCleanupMatchesBaseline": false,
+    "postCleanupBaselineChanges": {
+      "files": [],
+      "keychain": true
+    },
+    "postCleanupMatchesReviewedBaseline": true,
+    "changesDuringCleanup": {
+      "files": [],
+      "keychain": false
+    },
+    "processesRemaining": 0,
+    "finalVerificationAt": "2026-10-26T15:23:12.764Z"
+  }
+}

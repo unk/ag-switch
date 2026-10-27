@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Enable fish execution tests when installed
+        shell: bash
+        run: |
+          if command -v fish >/dev/null; then
+            printf 'AG_SWITCH_TEST_FISH=%s\n' "$(command -v fish)" >> "$GITHUB_ENV"
+          fi
+      - run: npm test
+      - run: npm pack --dry-run
