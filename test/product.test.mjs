@@ -6,9 +6,9 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
-  openStore, loadRegistry, profileDir, validateName, lock, unlock, writeJSON, validateProfile,
+  openStore, loadRegistry, profileDir, validateName, lock, unlock, writeJSON, validateProfile, withLock,
 } from '../src/storage.mjs';
-import { createProfile, removeProfile, runProfile, doctor, shellQuote } from '../src/profiles.mjs';
+import { createProfile, setupProfile, removeProfile, runProfile, doctor, shellQuote } from '../src/profiles.mjs';
 import { childEnv, launchArgs, inspectBinary, sha256, runChild } from '../src/runtime.mjs';
 import { parse } from '../src/cli.mjs';
 
@@ -78,7 +78,7 @@ test('unknown binaries fail closed before persistent profile state is written', 
   assert.equal(result.code, 1);
   await assert.rejects(fs.stat(path.join(store.root, 'untouched')), { code: 'ENOENT' });
 });
-test('same-profile lease blocks run and removal while different profiles run concurrently', async t => {
+test('same-profile runs overlap and mutations remain blocked until the last run exits', async t => {
   const { store, binary, inspect } = await fixture(t);
   await createProfile(store, 'ag-a', binary, { inspect });
   await createProfile(store, 'ag-b', binary, { inspect });
@@ -86,17 +86,89 @@ test('same-profile lease blocks run and removal while different profiles run con
   const started = new Promise(resolve => { ready = resolve; });
   let finish;
   const pending = new Promise(resolve => { finish = resolve; });
+  let finishSecond;
+  const pendingSecond = new Promise(resolve => { finishSecond = resolve; });
+  t.after(() => { finish(); finishSecond(); });
   const a = runProfile(store, 'ag-a', ['-p', 'a b'], { inspect, execute: async (_binary, args, env) => {
     assert.equal(args[2], '-p'); assert.equal(args[3], 'a b');
     assert.equal(env.HOME, process.env.HOME);
     ready(); await pending; return 17;
   } });
   await started;
-  await assert.rejects(runProfile(store, 'ag-a', [], { inspect }), /잠금/);
+  let readySecond;
+  const startedSecond = new Promise(resolve => { readySecond = resolve; });
+  const second = runProfile(store, 'ag-a', [], { inspect, execute: async (_binary, args, env) => {
+    assert.equal(args[0], `--gemini_dir=${profileDir(store, 'ag-a')}/data`);
+    assert.equal(env.TMPDIR, `${profileDir(store, 'ag-a')}/tmp`);
+    readySecond(); await pendingSecond; return 23;
+  } });
+  await startedSecond;
+  assert.equal((await fs.readdir(path.join(store.root, 'locks'))).length, 2);
   await assert.rejects(removeProfile(store, 'ag-a', { purge: true }), /잠금/);
+  await assert.rejects(setupProfile(store, 'ag-a', { mode: 'internal' }, { inspect }), /잠금/);
+  await assert.rejects(unlock(store, 'ag-a'), /실행 중/);
   assert.equal(await runProfile(store, 'ag-b', [], { inspect, execute: async () => 0 }), 0);
   finish(); assert.equal(await a, 17);
+  assert.equal((await fs.readdir(path.join(store.root, 'locks'))).length, 1);
+  await assert.rejects(removeProfile(store, 'ag-a', { purge: true }), /잠금/);
+  finishSecond(); assert.equal(await second, 23);
+  assert.deepEqual(await fs.readdir(path.join(store.root, 'locks')), []);
   await removeProfile(store, 'ag-a', { purge: true });
+});
+test('simultaneous launches in separate processes wait for the store lock and retain independent leases', async t => {
+  const { store } = await fixture(t);
+  const source = `
+    import { withLock, lock } from ${JSON.stringify(new URL('../src/storage.mjs', import.meta.url).href)};
+    const store = { root: process.argv[1] };
+    const release = await withLock(store, () => lock(store, 'ag-work', { shared: true }));
+    process.send('ready');
+    process.once('message', async () => { await release(); process.disconnect(); });
+  `;
+  const children = Array.from({ length: 4 }, () => spawn(process.execPath, ['--input-type=module', '-e', source, store.root], { stdio: ['ignore', 'ignore', 'pipe', 'ipc'] }));
+  t.after(() => { for (const child of children) child.kill(); });
+  const closed = children.map(child => new Promise(resolve => child.once('close', code => resolve(code))));
+  const ready = children.map(child => new Promise((resolve, reject) => {
+    let stderr = '';
+    child.stderr.on('data', bytes => { stderr += bytes; });
+    child.once('error', reject);
+    child.once('message', message => { assert.equal(message, 'ready'); resolve(); });
+    child.once('close', code => reject(new Error(`lease worker exited (${code}): ${stderr}`)));
+  }));
+  await Promise.all(ready);
+  const files = await fs.readdir(path.join(store.root, 'locks'));
+  assert.equal(files.length, children.length);
+  const owners = await Promise.all(files.map(async file => JSON.parse(await fs.readFile(path.join(store.root, 'locks', file), 'utf8'))));
+  assert.deepEqual(new Set(owners.map(owner => owner.pid)), new Set(children.map(child => child.pid)));
+  await assert.rejects(lock(store, 'ag-work'), /잠금/);
+  children[0].send('stop');
+  assert.equal(await closed[0], 0);
+  assert.equal((await fs.readdir(path.join(store.root, 'locks'))).length, children.length - 1);
+  await assert.rejects(unlock(store, 'ag-work'), /실행 중/);
+  for (const child of children.slice(1)) child.send('stop');
+  assert.deepEqual(await Promise.all(closed), [0, 0, 0, 0]);
+  assert.deepEqual(await fs.readdir(path.join(store.root, 'locks')), []);
+});
+test('brief store contention is queued instead of rejecting a launch', async t => {
+  const { store } = await fixture(t);
+  const release = await lock(store, 'store');
+  let entered = false;
+  const waiting = withLock(store, async () => { entered = true; return 42; });
+  assert.equal(entered, false);
+  await release();
+  assert.equal(await waiting, 42);
+  assert.equal(entered, true);
+});
+test('legacy exclusive profile locks block new runs and similarly named profiles stay independent', async t => {
+  const { store, binary, inspect } = await fixture(t);
+  await createProfile(store, 'ag-work', binary, { inspect });
+  const release = await lock(store, 'ag-work');
+  try {
+    await assert.rejects(runProfile(store, 'ag-work', [], { inspect }), /잠금/);
+    await assert.rejects(lock(store, 'ag-work', { shared: true }), /잠금/);
+  } finally { await release(); }
+  const shared = await lock(store, 'ag-work-extra', { shared: true });
+  try { await removeProfile(store, 'ag-work', { purge: true }); }
+  finally { await shared(); }
 });
 test('changed binary never starts and launch failures release leases', async t => {
   const { store, binary, inspect } = await fixture(t);
@@ -167,7 +239,7 @@ test('mutation locks are exclusive and live owners cannot be unlocked', async t 
   await release();
   const again = await lock(store, 'store'); await again();
 });
-test('unlock refuses a live orphaned child even when its parent is gone', async t => {
+for (const suffix of ['', '.session-one']) test(`unlock preserves a live orphaned child and recovers abandoned leases (${suffix || 'legacy'})`, async t => {
   const { store } = await fixture(t);
   const child = spawn(process.execPath, ['-e', 'setInterval(()=>{}, 1000)']);
   t.after(() => child.kill());
@@ -175,12 +247,30 @@ test('unlock refuses a live orphaned child even when its parent is gone', async 
   const exited = spawn(process.execPath, ['-e', '']);
   const deadPid = exited.pid;
   await new Promise(resolve => exited.once('close', resolve));
-  const file = path.join(store.root, 'locks/ag-work.json');
+  const file = path.join(store.root, `locks/ag-work${suffix}.json`);
   await writeJSON(file, { pid: deadPid, childPid: child.pid, id: 'fixture' });
   await assert.rejects(unlock(store, 'ag-work'), /실행 중/);
   child.kill(); await new Promise(resolve => child.once('close', resolve));
   await unlock(store, 'ag-work');
   await assert.rejects(fs.stat(file), { code: 'ENOENT' });
+});
+test('unlock recovers every abandoned session while preserving live and corrupt records', async t => {
+  const { store } = await fixture(t);
+  const exited = spawn(process.execPath, ['-e', '']);
+  const deadPid = exited.pid;
+  await new Promise(resolve => exited.once('close', resolve));
+  const files = ['ag-work.session-a.json', 'ag-work.session-b.json'].map(file => path.join(store.root, 'locks', file));
+  for (const file of files) await writeJSON(file, { pid: deadPid, id: file });
+  const release = await lock(store, 'ag-work', { shared: true });
+  await assert.rejects(unlock(store, 'ag-work'), /실행 중/);
+  for (const file of files) await fs.access(file);
+  await release();
+  await writeJSON(files[1], { pid: 0, id: 'bad' });
+  await assert.rejects(unlock(store, 'ag-work'), /손상/);
+  await fs.access(files[0]);
+  await writeJSON(files[1], { pid: deadPid, id: 'fixed' });
+  await unlock(store, 'ag-work');
+  assert.deepEqual(await fs.readdir(path.join(store.root, 'locks')), []);
 });
 test('registry corruption fails closed without resetting saved state', async t => {
   const { store } = await fixture(t);
@@ -193,7 +283,7 @@ test('CLI entry works through npm-style symlinks and does not create a store for
   const { temp } = await fixture(t);
   const link = path.join(temp, 'ag-switch'); await fs.symlink(cli, link);
   const version = await capture(process.execPath, [link, '--version']);
-  assert.equal(version.output.trim(), '0.2.0');
+  assert.equal(version.output.trim(), '0.2.1');
   const missing = path.join(temp, 'missing');
   const list = await capture(process.execPath, [cli, 'list', '--root', missing, '--json']);
   assert.equal(list.code, 0); assert.deepEqual(JSON.parse(list.output), []);

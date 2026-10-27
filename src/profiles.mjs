@@ -99,15 +99,15 @@ export async function removeProfile(store, name, { purge = false } = {}) {
 export async function runProfile(store, name, args, { inspect = inspectBinary, execute = runChild, env = process.env } = {}) {
   validateName(name);
   let release;
-  const context = await withLock(store, async () => {
-    const entry = (await loadRegistry(store)).profiles.find(p => p.name === name);
-    if (!entry) throw new Error('등록되지 않은 프로필입니다.');
-    const dir = await validateProfile(store, name);
-    const forwarded = launchArgs(dir, args);
-    release = await lock(store, name);
-    return { entry, dir, forwarded };
-  });
   try {
+    const context = await withLock(store, async () => {
+      const entry = (await loadRegistry(store)).profiles.find(p => p.name === name);
+      if (!entry) throw new Error('등록되지 않은 프로필입니다.');
+      const dir = await validateProfile(store, name);
+      const forwarded = launchArgs(dir, args);
+      release = await lock(store, name, { shared: true });
+      return { entry, dir, forwarded };
+    });
     const checked = await inspect(context.entry.binary);
     if (checked.sha256 !== context.entry.sha256) throw new Error('프로필 생성 이후 바이너리가 변경됐습니다.');
     const code = await execute(context.entry.binary, context.forwarded, childEnv(env, context.dir), release.registerChild);
@@ -115,7 +115,7 @@ export async function runProfile(store, name, args, { inspect = inspectBinary, e
     if (after.sha256 !== context.entry.sha256) throw new Error('실행 중 바이너리가 변경됐습니다.');
     await validateProfile(store, name);
     return code;
-  } finally { await release(); }
+  } finally { await release?.(); }
 }
 export async function doctor(store, { inspect = inspectBinary } = {}) {
   const results = [];

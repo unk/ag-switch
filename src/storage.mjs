@@ -2,6 +2,7 @@ import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 
 export const ROOT = path.join(os.homedir(), '.ag-switch');
 export const MARKER = 'ag-switch-v1';
@@ -83,16 +84,41 @@ export async function validateProfile(store, name) {
   return dir;
 }
 
-// Exclusive files serialize mutations and hold a lease for each running profile.
-// A live or inaccessible owner is never assumed stale, including PID reuse.
-export async function lock(store, name) {
-  const file = path.join(store.root, 'locks', `${name}.json`);
+async function sessionLocks(store, name) {
+  return (await fs.readdir(path.join(store.root, 'locks')))
+    .filter(file => file.startsWith(`${name}.`) && file !== `${name}.json` && file.endsWith('.json'))
+    .map(file => path.join(store.root, 'locks', file));
+}
+
+// Runs share a profile through independent leases. Mutations use the legacy
+// exclusive path, so an older running launcher also prevents unsafe access.
+export async function lock(store, name, { shared = false, waitMs = 0 } = {}) {
+  if (name !== 'store') validateName(name);
+  if (shared && name === 'store') throw new Error('저장소 잠금은 공유할 수 없습니다.');
   const id = randomUUID();
+  const exclusive = path.join(store.root, 'locks', `${name}.json`);
+  const file = shared ? path.join(store.root, 'locks', `${name}.${id}.json`) : exclusive;
+  const busy = () => new Error(`다른 작업 또는 실행 중인 프로필이 잠금을 사용합니다: ${name}. 설정 변경·제거는 모든 실행을 종료한 뒤 시도하세요. 비정상 종료 후에는 unlock 명령을 사용하세요.`);
+  const deadline = performance.now() + waitMs;
+  if (shared && await statOrNull(exclusive)) throw busy();
+  for (;;) {
+    try {
+      await fs.writeFile(file, `${JSON.stringify({ pid: process.pid, id })}\n`, { flag: 'wx', mode: 0o600 });
+      break;
+    } catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      const remaining = deadline - performance.now();
+      if (shared || remaining <= 0) throw busy();
+      await delay(Math.min(20, remaining));
+    }
+  }
   try {
-    await fs.writeFile(file, `${JSON.stringify({ pid: process.pid, id })}\n`, { flag: 'wx', mode: 0o600 });
+    // Check after creation too: a concurrent exclusive/shared acquisition must
+    // not let both holders proceed, even outside the store mutation lock.
+    if (shared ? await statOrNull(exclusive) : name !== 'store' && (await sessionLocks(store, name)).length) throw busy();
   } catch (e) {
-    if (e.code !== 'EEXIST') throw e;
-    throw new Error(`다른 작업 또는 실행 중인 프로필이 잠금을 사용합니다: ${name}. 비정상 종료 후에는 unlock 명령을 사용하세요.`);
+    await fs.unlink(file);
+    throw e;
   }
   const release = async () => {
     const owner = await readJSON(file);
@@ -105,22 +131,42 @@ export async function lock(store, name) {
   return release;
 }
 export async function withLock(store, action) {
-  const release = await lock(store, 'store');
+  // Startup and registry edits are brief; simultaneous launches should wait
+  // for them rather than fail with a spurious profile lock error.
+  const release = await lock(store, 'store', { waitMs: 5000 });
   try { return await action(); } finally { await release(); }
 }
 export async function unlock(store, name) {
   if (name !== 'store') validateName(name);
-  const file = path.join(store.root, 'locks', `${name}.json`);
-  const owner = await readJSON(file);
-  if (!Number.isSafeInteger(owner.pid) || owner.pid <= 1 || typeof owner.id !== 'string') throw new Error('잠금 형식이 손상됐습니다. 자동 해제할 수 없습니다.');
-  for (const pid of [owner.pid, owner.childPid].filter(value => value !== undefined)) {
-    if (!Number.isSafeInteger(pid) || pid <= 1) throw new Error('잠금 프로세스 정보가 손상됐습니다.');
-    try { process.kill(pid, 0); }
-    catch (e) {
-      if (e.code === 'ESRCH') continue;
-      throw new Error('잠금 소유 프로세스를 조회할 수 없습니다.');
+  const recover = async () => {
+    const exclusive = path.join(store.root, 'locks', `${name}.json`);
+    const files = [exclusive, ...(name === 'store' ? [] : await sessionLocks(store, name))];
+    const abandoned = [];
+    for (const file of files) {
+      const stat = await statOrNull(file);
+      if (!stat) continue;
+      let owner;
+      try { owner = await readJSON(file); } catch (e) { if (e.code === 'ENOENT') continue; throw e; }
+      if (!Number.isSafeInteger(owner.pid) || owner.pid <= 1 || typeof owner.id !== 'string') throw new Error('잠금 형식이 손상됐습니다. 자동 해제할 수 없습니다.');
+      for (const pid of [owner.pid, owner.childPid].filter(value => value !== undefined)) {
+        if (!Number.isSafeInteger(pid) || pid <= 1) throw new Error('잠금 프로세스 정보가 손상됐습니다.');
+        try { process.kill(pid, 0); }
+        catch (e) {
+          if (e.code === 'ESRCH') continue;
+          throw new Error('잠금 소유 프로세스를 조회할 수 없습니다.');
+        }
+        throw new Error('잠금 소유 프로세스가 실행 중입니다. 모든 실행을 종료한 뒤 다시 시도하세요.');
+      }
+      abandoned.push({ file, stat });
     }
-    throw new Error('잠금 소유 프로세스가 실행 중입니다.');
-  }
-  await fs.unlink(file);
+    for (const { file, stat } of abandoned) {
+      const current = await statOrNull(file);
+      if (!current) continue;
+      if (current.ino !== stat.ino || current.dev !== stat.dev) throw new Error('잠금 소유 정보가 변경됐습니다.');
+      await fs.unlink(file);
+    }
+  };
+  // Serialize recovery with new launches and profile removal. The store lock
+  // itself must be recoverable without acquiring it first.
+  return name === 'store' ? recover() : withLock(store, recover);
 }
