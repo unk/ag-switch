@@ -148,7 +148,7 @@ npm start -- help
 - [PoC 실행·로그인·재개 방법](poc/README.md)
 - [검증 계획과 통과 조건](POC_PLAN.md)
 - [공유용 PoC 결과 JSON](poc/evidence/ag-switch-poc-O92xjF.json)
-- [공개 배포 검증 결과](validation/RELEASE_RESULTS.md)
+- [0.2.1 공개 배포 검증 결과](validation/RELEASE_0.2.1_RESULTS.md)
 
 ## 라이선스
 
