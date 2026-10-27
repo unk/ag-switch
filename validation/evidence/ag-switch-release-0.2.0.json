@@ -1,0 +1,23 @@
+{
+  "status": "pass",
+  "version": "0.2.0",
+  "registry": "https://registry.npmjs.org/",
+  "npmUrl": "https://www.npmjs.com/package/@naram/ag-switch",
+  "githubUrl": "https://github.com/unk/ag-switch",
+  "releaseUrl": "https://github.com/unk/ag-switch/releases/tag/v0.2.0",
+  "sourceCommit": "8734eaaeb8632a633f134aeb5d84be51563e08ef",
+  "ciUrl": "https://github.com/unk/ag-switch/actions/runs/40426267321",
+  "ciNodeVersions": [
+    22,
+    24
+  ],
+  "ciConclusion": "success",
+  "localTestsPassed": 67,
+  "latest": "0.2.0",
+  "shasum": "823bb5fba9b10ed49c022d3cc430bdf54fcb454e",
+  "integrity": "sha512-Na8s4kQILQewitvCJLZW2M/0Ft5TRtTmS5QHP9d85YoQZm/PTiHqjgm0IpFDOWDQZLBGafH3Ll9Z2HRIGq4gUQ==",
+  "tarball": "https://registry.npmjs.org/@naram/ag-switch/-/ag-switch-0.2.0.tgz",
+  "publicNpmInstallVerified": true,
+  "cleanTemporaryCwdAndCache": true,
+  "verifiedAt": "2026-10-27T00:28:55.066Z"
+}

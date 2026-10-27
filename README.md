@@ -4,6 +4,8 @@ Antigravity CLI의 Google OAuth 계정을 독립된 프로필로 실행합니다
 
 현재 버전은 **0.2.0**입니다. 지원 환경은 PoC에서 검증한 **macOS arm64 · agy 1.4.7 · SHA-256 `b7a13e53c9f49921692676ef8edc2e60ceb67064c00bc732d9a364ec3ad75b32`**입니다. 실행할 때마다 바이너리를 검사하며, 검증하지 않은 바이너리는 실행하지 않습니다. 같은 버전 문자열이어도 바이너리가 다르면 새 검증이 필요합니다.
 
+[npm](https://www.npmjs.com/package/@naram/ag-switch) · [GitHub 릴리스](https://github.com/unk/ag-switch/releases/tag/v0.2.0)
+
 ```sh
 npx @naram/ag-switch
 
@@ -135,6 +137,7 @@ npm start -- help
 - [PoC 실행·로그인·재개 방법](poc/README.md)
 - [검증 계획과 통과 조건](POC_PLAN.md)
 - [공유용 PoC 결과 JSON](poc/evidence/ag-switch-poc-O92xjF.json)
+- [공개 배포 검증 결과](validation/RELEASE_RESULTS.md)
 
 ## 라이선스
 
