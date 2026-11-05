@@ -1,0 +1,169 @@
+{
+  "schema": 1,
+  "scope": "upgrade-compatibility",
+  "status": "pass",
+  "environment": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "v24.21.0",
+    "agyVersion": "1.5.1",
+    "binarySha256": "5ce7fbe126eb9abdc78634332a0a1bdd428327fba37ef7d1aeba7553eec55f3f"
+  },
+  "startedAt": "2026-11-05T15:30:01.648Z",
+  "endedAt": "2026-11-05T15:33:55.904Z",
+  "inspection": {
+    "at": "2026-11-05T15:30:01.648Z",
+    "version": "1.5.1",
+    "versionExitCode": 0,
+    "helpExitCode": 0,
+    "flags": {
+      "gemini_dir": {
+        "code": 2,
+        "timedOut": false,
+        "missingValueRecognized": true,
+        "unknownFlag": false
+      },
+      "app_data_dir": {
+        "code": 2,
+        "timedOut": false,
+        "missingValueRecognized": true,
+        "unknownFlag": false
+      }
+    },
+    "helpMentionsProfile": false,
+    "staticMarkers": {
+      "AGY_CLI_DISABLE_AUTO_UPDATE": true,
+      "Using file-based token storage because %s detected": true,
+      "SSH_TTY": true
+    },
+    "removedEnvironmentNames": [
+      "SSH_AUTH_SOCK"
+    ]
+  },
+  "emptyProfiles": {
+    "phase": "probe",
+    "at": "2026-11-05T15:31:31.859Z",
+    "status": "pass",
+    "profiles": {
+      "a": {
+        "checks": {
+          "sshFileStorage": true,
+          "loginRequired": true,
+          "noFallbackStorage": true,
+          "noAuthenticatedResponse": true,
+          "credentialAbsent": true,
+          "cleanExit": true
+        },
+        "code": 1,
+        "timedOut": true
+      },
+      "b": {
+        "checks": {
+          "sshFileStorage": true,
+          "loginRequired": true,
+          "noFallbackStorage": true,
+          "noAuthenticatedResponse": true,
+          "credentialAbsent": true,
+          "cleanExit": true
+        },
+        "code": 1,
+        "timedOut": true
+      }
+    },
+    "comparison": {
+      "files": [],
+      "keychain": false
+    }
+  },
+  "authenticated": {
+    "version": "1.5.1",
+    "sha256": "5ce7fbe126eb9abdc78634332a0a1bdd428327fba37ef7d1aeba7553eec55f3f",
+    "platform": "darwin",
+    "arch": "arm64",
+    "startedAt": "2026-11-05T15:32:05.939Z",
+    "status": "pass",
+    "phases": {
+      "authenticatedResponses": {
+        "status": "pass",
+        "requests": 2
+      },
+      "reconnect": {
+        "status": "pass",
+        "requests": 3,
+        "order": [
+          "a",
+          "b",
+          "a"
+        ]
+      },
+      "concurrent": {
+        "status": "pass",
+        "requests": 5,
+        "requestsOverlapped": true,
+        "restartedWhilePeerRunning": true
+      }
+    },
+    "excluded": [
+      "fresh-oauth-login",
+      "logout-relogin",
+      "controlled-natural-renewal"
+    ],
+    "comparison": {
+      "files": [],
+      "keychain": false
+    },
+    "checks": {
+      "allTenRequestsCompleted": true,
+      "responsesMatched": true,
+      "accountsDifferent": true,
+      "accountsStable": true,
+      "credentialsPrivate": true,
+      "conversationsSeparated": true,
+      "noToolEvents": true,
+      "nativeStateUnchanged": true,
+      "profileSettingsUnchanged": true,
+      "registryUnchanged": true,
+      "binaryUnchanged": true,
+      "validationProcessesExited": true
+    },
+    "tokenRenewalObserved": {
+      "a": {
+        "expiredBeforeRequest": false,
+        "tokenChanged": false,
+        "expiryExtended": false
+      },
+      "b": {
+        "expiredBeforeRequest": false,
+        "tokenChanged": false,
+        "expiryExtended": false
+      }
+    },
+    "endedAt": "2026-11-05T15:33:55.904Z"
+  },
+  "limitations": [
+    "Fresh OAuth login was not repeated on 1.5.1. Existing independently authenticated profiles were used.",
+    "Controlled natural token renewal and logout/relogin were not repeated on 1.5.1. Tokens did not change during these checks.",
+    "Existing user sessions stayed running. Two new validation conversations were created in the existing profiles."
+  ],
+  "cleanup": {
+    "status": "pass",
+    "completedAt": "2026-11-05T15:37:43.344Z",
+    "temporaryRootsRemoved": true,
+    "validationProcessesRemaining": 0,
+    "nativeStateUnchangedDuringCleanup": true
+  },
+  "regressionTests": {
+    "passed": 83,
+    "failed": 0
+  },
+  "localApplication": {
+    "profiles": [
+      "ag-c",
+      "ag-w"
+    ],
+    "agyVersion": "1.5.1",
+    "warningsAbsent": true,
+    "doctorOk": true,
+    "credentialMetadataAndSettingsUnchanged": true
+  }
+}

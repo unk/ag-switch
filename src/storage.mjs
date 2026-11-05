@@ -64,6 +64,7 @@ export async function loadRegistry(store) {
     validateName(p.name);
     if (names.has(p.name) || !path.isAbsolute(p.binary ?? '') || !/^[a-f0-9]{64}$/.test(p.sha256 ?? '') || typeof p.createdAt !== 'string') throw new Error('프로필 메타데이터가 손상됐습니다.');
     names.add(p.name);
+    if (p.launcher && (!path.isAbsolute(p.launcher.node ?? '') || !path.isAbsolute(p.launcher.cli ?? ''))) throw new Error('런처 메타데이터가 손상됐습니다.');
     const i = p.integration;
     if (i && (!['alias', 'script', 'both'].includes(i.mode) ||
         (['alias', 'both'].includes(i.mode) && (!['zsh', 'bash', 'fish'].includes(i.shell) || !path.isAbsolute(i.rcPath ?? '') || typeof i.block !== 'string' || !i.block.includes(`# >>> ag-switch: ${p.name} >>>`))) ||

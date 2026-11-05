@@ -44,6 +44,10 @@ export async function integrationConfig(options = {}, context = {}) {
   return { mode, ...(needsAlias ? { shell: detected.name, rcPath: expandPath(options.rcPath || detected.rcPath, context.home) } : {}),
     ...(['script', 'both'].includes(mode) ? { binDir: expandPath(options.binDir || path.join(context.home ?? os.homedir(), '.local/bin'), context.home) } : {}) };
 }
+export function integrationOptions(integration) {
+  return integration ? { mode: integration.mode, shell: integration.shell, rcPath: integration.rcPath,
+    ...(integration.scriptPath ? { binDir: path.dirname(integration.scriptPath) } : {}) } : { mode: 'internal' };
+}
 export async function assertCommandAvailable(name, allowed = [], env = process.env) {
   validateName(name);
   const keywords = ['if', 'then', 'else', 'elif', 'fi', 'for', 'while', 'do', 'done', 'case', 'esac', 'function', 'select', 'until', 'time', 'in', 'end', 'switch', 'begin'];

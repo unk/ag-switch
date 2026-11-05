@@ -2,12 +2,23 @@ import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const capture = promisify(execFile);
 
 export const VERIFIED = Object.freeze({
   platform: 'darwin', arch: 'arm64', version: '1.4.7',
   sha256: 'b7a13e53c9f49921692676ef8edc2e60ceb67064c00bc732d9a364ec3ad75b32',
 });
+export const VERIFIED_BINARIES = Object.freeze([
+  Object.freeze({ ...VERIFIED, validation: 'oauth-lifecycle', evidence: 'poc/evidence/ag-switch-poc-O92xjF.json' }),
+  Object.freeze({
+    ...VERIFIED, version: '1.5.1',
+    sha256: '5ce7fbe126eb9abdc78634332a0a1bdd428327fba37ef7d1aeba7553eec55f3f',
+    validation: 'upgrade-compatibility', evidence: 'validation/evidence/agy-1.5.1-darwin-arm64.json',
+  }),
+]);
 export async function sha256(file) {
   const hash = createHash('sha256');
   for await (const chunk of createReadStream(file)) hash.update(chunk);
@@ -28,8 +39,26 @@ export async function resolveBinary(input, env = process.env) {
 export async function inspectBinary(binary) {
   if (process.platform !== VERIFIED.platform || process.arch !== VERIFIED.arch) throw new Error('현재 지원 환경은 macOS arm64입니다.');
   const digest = await sha256(binary);
-  if (digest !== VERIFIED.sha256) throw new Error('PoC에서 검증하지 않은 agy 바이너리입니다. 해당 버전의 격리 검증 후 지원 정보를 갱신해야 합니다.');
-  return { binary, sha256: digest, version: VERIFIED.version };
+  await fs.access(binary, fs.constants.X_OK);
+  const known = VERIFIED_BINARIES.find(info => info.sha256 === digest && info.platform === process.platform && info.arch === process.arch);
+  if (known) return { binary, sha256: digest, version: known.version, verified: true, validation: known.validation };
+  let version = 'unknown';
+  try {
+    const { stdout } = await capture(binary, ['--version'], {
+      env: { ...process.env, AGY_CLI_DISABLE_AUTO_UPDATE: 'true' }, timeout: 3000, maxBuffer: 4096,
+    });
+    version = stdout.match(/\b\d+\.\d+\.\d+(?:[-+][\w.-]+)?\b/)?.[0] ?? version;
+  } catch { /* Version detection is informational and must not block execution. */ }
+  return { binary, sha256: digest, version, warnings: [`agy ${version === 'unknown' ? '(버전 미확인)' : version}의 프로필 격리 호환성은 아직 검증하지 않았습니다.`] };
+}
+export function binaryWarnings(info, previous) {
+  const warnings = [...(info.warnings ?? [])];
+  if (previous && info.sha256 !== previous.sha256 && !info.verified) warnings.push('agy 바이너리가 등록 이후 변경됐습니다.');
+  return warnings;
+}
+export function reportBinaryWarnings(info, previous, warn = message => console.error(`ag-switch: 안내: ${message}`)) {
+  const warnings = binaryWarnings(info, previous);
+  if (warnings.length) warn(`${warnings.join(' ')} 실행을 계속합니다.`);
 }
 export function childEnv(source, dir) {
   const env = { ...source };

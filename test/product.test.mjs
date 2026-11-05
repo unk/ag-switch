@@ -9,7 +9,7 @@ import {
   openStore, loadRegistry, profileDir, validateName, lock, unlock, writeJSON, validateProfile, withLock,
 } from '../src/storage.mjs';
 import { createProfile, setupProfile, removeProfile, runProfile, doctor, shellQuote } from '../src/profiles.mjs';
-import { childEnv, launchArgs, inspectBinary, sha256, runChild } from '../src/runtime.mjs';
+import { childEnv, launchArgs, inspectBinary, sha256, runChild, VERIFIED } from '../src/runtime.mjs';
 import { parse } from '../src/cli.mjs';
 
 const cli = fileURLToPath(new URL('../src/cli.mjs', import.meta.url));
@@ -61,7 +61,8 @@ test('registry and launchers survive reload with private permissions and safely 
   await createProfile(store, 'ag-personal', binary, { inspect });
   const reloaded = await openStore(store.root);
   assert.equal((await loadRegistry(reloaded)).profiles[0].name, 'ag-personal');
-  await assert.rejects(createProfile(store, 'ag-personal', binary, { inspect }), /이미/);
+  assert.equal((await createProfile(store, 'ag-personal', binary, { inspect })).updated, true);
+  assert.equal((await loadRegistry(store)).profiles.length, 1);
   for (const [relative, mode] of [['profiles.json', 0o600], ['bin/ag-personal', 0o700], ['profiles/ag-personal/profile.json', 0o600], ['profiles/ag-personal/data', 0o700]]) assert.equal((await fs.stat(path.join(store.root, relative))).mode & 0o777, mode);
   const result = await capture('/bin/sh', ['-c', `printf '%s' ${shellQuote(store.root)}`]);
   assert.equal(result.output, store.root);
@@ -69,10 +70,11 @@ test('registry and launchers survive reload with private permissions and safely 
   assert.equal(wrapper.includes('fake-agy'), false);
   assert.equal(wrapper.includes(' -- "$@"'), true);
 });
-test('unknown binaries fail closed before persistent profile state is written', async t => {
+test('missing binaries fail before persistent profile state is written', async t => {
   const { store, binary } = await fixture(t);
-  await assert.rejects(inspectBinary(binary), /검증|macOS/);
-  await assert.rejects(createProfile(store, 'ag-work', binary), /검증|macOS/);
+  await fs.unlink(binary);
+  await assert.rejects(inspectBinary(binary));
+  await assert.rejects(createProfile(store, 'ag-work', binary));
   assert.equal((await loadRegistry(store)).profiles.length, 0);
   const result = await capture(process.execPath, [cli, 'create', 'ag-work', '--root', path.join(store.root, 'untouched'), '--binary', binary]);
   assert.equal(result.code, 1);
@@ -106,6 +108,8 @@ test('same-profile runs overlap and mutations remain blocked until the last run 
   assert.equal((await fs.readdir(path.join(store.root, 'locks'))).length, 2);
   await assert.rejects(removeProfile(store, 'ag-a', { purge: true }), /잠금/);
   await assert.rejects(setupProfile(store, 'ag-a', { mode: 'internal' }, { inspect }), /잠금/);
+  await assert.rejects(createProfile(store, 'ag-a', binary, { inspect }), /잠금/);
+  await assert.rejects(createProfile(store, 'ag-a', binary, { inspect, recreate: true }), /잠금/);
   await assert.rejects(unlock(store, 'ag-a'), /실행 중/);
   assert.equal(await runProfile(store, 'ag-b', [], { inspect, execute: async () => 0 }), 0);
   finish(); assert.equal(await a, 17);
@@ -170,15 +174,39 @@ test('legacy exclusive profile locks block new runs and similarly named profiles
   try { await removeProfile(store, 'ag-work', { purge: true }); }
   finally { await shared(); }
 });
-test('changed binary never starts and launch failures release leases', async t => {
+test('changed binaries warn and keep the child exit code; launch failures release leases', async t => {
   const { store, binary, inspect } = await fixture(t);
   await createProfile(store, 'ag-work', binary, { inspect });
   await assert.rejects(runProfile(store, 'ag-work', [], { inspect, execute: async () => { throw new Error('spawn fixture'); } }), /spawn fixture/);
   await fs.appendFile(binary, '# replaced\n');
   let executed = false;
-  await assert.rejects(runProfile(store, 'ag-work', [], { inspect, execute: async () => { executed = true; } }), /변경/);
-  assert.equal(executed, false);
+  const warnings = [];
+  const code = await runProfile(store, 'ag-work', [], { inspect, warn: message => warnings.push(message), execute: async () => {
+    executed = true;
+    await fs.appendFile(binary, '# updated during run\n');
+    return 23;
+  } });
+  assert.equal(code, 23);
+  assert.equal(executed, true);
+  assert.equal(warnings.length, 2);
+  assert.ok(warnings.every(message => /변경.*실행을 계속/.test(message)));
+  assert.equal((await doctor(store, { inspect }))[0].ok, true);
+  assert.match((await doctor(store, { inspect }))[0].warnings[0], /변경/);
+  await setupProfile(store, 'ag-work', { mode: 'internal' }, { inspect, warn: message => warnings.push(message) });
+  assert.equal((await loadRegistry(store)).profiles[0].sha256, await sha256(binary));
+  assert.deepEqual(await fs.readdir(path.join(store.root, 'locks')), []);
   await removeProfile(store, 'ag-work');
+});
+test('unknown binary version detection failures are informational', {
+  skip: process.platform !== VERIFIED.platform || process.arch !== VERIFIED.arch,
+}, async t => {
+  const { binary } = await fixture(t);
+  await fs.writeFile(binary, '#!/bin/sh\nexit 1\n');
+  const info = await inspectBinary(binary);
+  assert.equal(info.version, 'unknown');
+  assert.match(info.warnings[0], /버전 미확인/);
+  await fs.chmod(binary, 0o600);
+  await assert.rejects(inspectBinary(binary), { code: 'EACCES' });
 });
 test('remove preserves credentials, reuse restores them, purge stays within its profile', async t => {
   const { temp, store, binary, inspect } = await fixture(t);
@@ -283,7 +311,7 @@ test('CLI entry works through npm-style symlinks and does not create a store for
   const { temp } = await fixture(t);
   const link = path.join(temp, 'ag-switch'); await fs.symlink(cli, link);
   const version = await capture(process.execPath, [link, '--version']);
-  assert.equal(version.output.trim(), '0.2.1');
+  assert.equal(version.output.trim(), JSON.parse(await fs.readFile(new URL('../package.json', import.meta.url), 'utf8')).version);
   const missing = path.join(temp, 'missing');
   const list = await capture(process.execPath, [cli, 'list', '--root', missing, '--json']);
   assert.equal(list.code, 0); assert.deepEqual(JSON.parse(list.output), []);
